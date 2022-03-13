@@ -28,3 +28,4 @@ mongoose.connect(process.env.DB_CONNECTION_LOCAL, {
 // ROUTES
 //--------------------------------------------------------------
 app.use('/api/v1', require('./routes/record'))
+app.use('/api/v1', require('./routes/auth'))
