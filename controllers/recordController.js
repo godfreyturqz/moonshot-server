@@ -8,9 +8,12 @@ const asyncFunction = async (res, callback) => {
     cache.delete(CACHE_KEY)
     try {
         const data = await callback()
+        console.log('record API')
         res.status(200).json(data)
 
     } catch (error) {
+        console.log('error in record API')
+        console.log(error)
         res.status(400).json(error)
     }
 }
@@ -38,10 +41,10 @@ const get = async (req, res) => {
     }
 }
 
-const getOne = (req, res) => asyncFunction(res, () => recordModel.findOne({uniqid: req.params.id}))
+const getOne = (req, res) => asyncFunction(res, () => recordModel.findOne({uid: req.params.id}))
 const create = (req, res) => asyncFunction(res, () => recordModel.create(req.body))
-const remove = (req, res) => asyncFunction(res, () => recordModel.findOneAndRemove({uniqid: req.params.id}))
-const update = (req, res) => asyncFunction(res, () => recordModel.findOneAndUpdate({uniqid: req.params.id}, req.body, { new: true }))
+const remove = (req, res) => asyncFunction(res, () => recordModel.findOneAndRemove({uid: req.params.id}))
+const update = (req, res) => asyncFunction(res, () => recordModel.findOneAndUpdate({uid: req.params.id}, req.body, { new: true }))
 
 module.exports = {
     get,
