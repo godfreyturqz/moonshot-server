@@ -18,7 +18,8 @@ const userSchema = new mongoose.Schema({
     created: {
         type: Date,
         default: Date.now
-    }
+    },
+    refreshToken: String
 })
 
 // runs a function before save

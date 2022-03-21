@@ -16,13 +16,22 @@ module.exports.signupUser = async (req,res) => {
 
     try {
         const userData = await userModel.create(req.body)
-        const token = jwt.createToken(userData._id)
+        const accessToken = jwt.generateAccessToken(userData._id)
+        const refreshToken = jwt.generateRefreshToken(userData._id)
 
-        res.cookie(JWT_COOKIE_NAME, token, { 
-            httpOnly:true, maxAge: 3 * 24 * 60 * 60 * 1000,
+        // Saving refreshToken with current user
+        userData.refreshToken = refreshToken
+        const result = await userData.save()
+        console.log(result)
+
+        res.cookie(JWT_COOKIE_NAME, refreshToken, { 
+            httpOnly:true, 
+            maxAge: 1 * 24 * 60 * 60 * 1000,
+            sameSite: 'None',
             // secure: true // only add when in production
         })
-        res.status(201).json({ userId: userData._id })
+
+        res.status(201).json({ accessToken })
 
     } catch (error) {
         const errors = signupErrorHandler(error)
@@ -34,18 +43,35 @@ module.exports.signupUser = async (req,res) => {
 // LOGIN
 //------------------------------------
 module.exports.loginUser = async (req,res) => {
+
+    const { email, password } = req.body
     
+    if (!email || !password) return res.status(400).json({ message: 'Username and password are required.' })
+
     try {
-        const userData = await userModel.findOne({ email: req.body.email })
-        if(userData === null) return res.status(400).json({ email: 'account does not exists' })
+        const userData = await userModel.findOne({ email })
+        if(userData === null) return res.status(400).json({ message: 'account does not exists' })
 
-        const isAuth = await bcrypt.compare(req.body.password, userData.password)
+        const isMatch = await bcrypt.compare(password, userData.password)
 
-        if(isAuth) {
+        if(isMatch) {
 
-            const token = jwt.createToken(userData._id)
-            res.cookie(JWT_COOKIE_NAME, token, { httpOnly:true, maxAge: 3 * 24 * 60 * 60 * 1000})
-            res.status(200).json({userId: userData._id}) 
+            const accessToken = jwt.generateAccessToken(userData._id)
+            const refreshToken = jwt.generateRefreshToken(userData._id)
+ 
+            // Saving refreshToken with current user
+            userData.refreshToken = refreshToken
+            const result = await userData.save()
+            console.log(result)
+
+            res.cookie(JWT_COOKIE_NAME, refreshToken, { 
+                httpOnly:true,
+                maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
+                sameSite: 'None',
+                // secure: true // only add when in production
+            })
+
+            res.status(200).json({ accessToken }) 
 
         } else {
             res.status(400).json({password: 'authentication error'})

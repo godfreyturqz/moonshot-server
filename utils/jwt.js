@@ -1,12 +1,20 @@
 const jwt = require('jsonwebtoken')
 
 //------------------------------------
-// CREATE TOKENS
+// GENERATE TOKENS
 //------------------------------------
-module.exports.createToken = (userId) => {
+module.exports.generateAccessToken = (userId) => {
     return jwt.sign(
         { userId }, 
         process.env.ACCESS_TOKEN, 
-        { expiresIn: 3 * 24 * 60 * 60 }
+        { expiresIn: '30s' } // 30 seconds
+    )
+}
+
+module.exports.generateRefreshToken = (userId) => {
+    return jwt.sign(
+        { userId }, 
+        process.env.REFRESH_TOKEN, 
+        { expiresIn: 1 * 24 * 60 * 60 } // 1 day
     )
 }
