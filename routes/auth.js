@@ -5,11 +5,11 @@ const authController = require('../controllers/authController')
 router.route('/signup')
     .post(authController.signupUser)
 
-router.route('/login')
-    .post(authController.loginUser)
+router.route('/signin')
+    .post(authController.signinUser)
 
-router.route('/logout')
-    .get(authController.logoutUser)
+router.route('/signout')
+    .get(authController.signoutUser)
 
 // for dev purposes
 router.route('/authDev')

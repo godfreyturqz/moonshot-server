@@ -1,7 +1,7 @@
 // LIBRARIES
 const bcrypt = require('bcrypt')
 // MODEL
-const userModel = require('../models/userModel')
+const UserModel = require('../models/userModel')
 // UTILS
 const jwt = require('../utils/jwt')
 const signupErrorHandler = require('../utils/signupErrorHandler')
@@ -14,8 +14,10 @@ const JWT_COOKIE_NAME = 'JWT'
 //------------------------------------
 module.exports.signupUser = async (req,res) => {
 
+    const { email, password } = req.body
+
     try {
-        const userData = await userModel.create(req.body)
+        const userData = await UserModel.create({ email, password })
         const accessToken = jwt.generateAccessToken(userData._id)
         const refreshToken = jwt.generateRefreshToken(userData._id)
 
@@ -40,53 +42,45 @@ module.exports.signupUser = async (req,res) => {
 }
 
 //------------------------------------
-// LOGIN
+// SIGNIN
 //------------------------------------
-module.exports.loginUser = async (req,res) => {
+module.exports.signinUser = async (req,res) => {
 
     const { email, password } = req.body
     
-    if (!email || !password) return res.status(400).json({ message: 'Username and password are required.' })
+    if(!email || !password) return res.status(400).json({ message: 'email and password are required.' })
 
     try {
-        const userData = await userModel.findOne({ email })
-        if(userData === null) return res.status(400).json({ message: 'account does not exists' })
+        const userData = await UserModel.findOne({ email })
+        if(!userData) return res.status(404).json({ message: 'account does not exists' })
 
         const isMatch = await bcrypt.compare(password, userData.password)
+        if(!isMatch) return res.status(401).json({message: 'authentication error'})
+    
+        const accessToken = jwt.generateAccessToken(userData._id)
+        const refreshToken = jwt.generateRefreshToken(userData._id)
 
-        if(isMatch) {
+        // Saving refreshToken with current user
+        userData.refreshToken = refreshToken
+        userData.save()
 
-            const accessToken = jwt.generateAccessToken(userData._id)
-            const refreshToken = jwt.generateRefreshToken(userData._id)
- 
-            // Saving refreshToken with current user
-            userData.refreshToken = refreshToken
-            const result = await userData.save()
-            console.log(result)
-
-            res.cookie(JWT_COOKIE_NAME, refreshToken, { 
-                httpOnly:true,
-                maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
-                sameSite: 'None',
-                // secure: true // only add when in production
-            })
-
-            res.status(200).json({ accessToken }) 
-
-        } else {
-            res.status(400).json({password: 'authentication error'})
-        }
+        res.cookie(JWT_COOKIE_NAME, refreshToken, { 
+            httpOnly: true,
+            maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
+            sameSite: 'None',
+            // secure: true // only add when in production
+        })
+        res.status(200).json({accessToken}) 
 
     } catch (error) {
-        console.log(error)
-        res.status(400).json({ message: 'login failed', error })
+        res.status(400).json({message: 'login failed', error})
     }
 }
 
 //------------------------------------
-// LOGOUT
+// SIGNOUT
 //------------------------------------
-module.exports.logoutUser = (req, res) => {
+module.exports.signoutUser = (req, res) => {
     res.cookie(JWT_COOKIE_NAME, '', { httpOnly:true, maxAge: 1}).send()
 }
 
@@ -96,12 +90,12 @@ module.exports.logoutUser = (req, res) => {
 
 // GET ALL USERS
 module.exports.getAllUsers = async (req,res) => {
-    const data = await userModel.find()
+    const data = await UserModel.find()
     res.json(data)
 }
 
 // DELETE ALL USERS
 module.exports.deleteAllUsers = (req, res) => {
-    userModel.deleteMany({}).then((res)=> res.json('success'))
+    UserModel.deleteMany({}).then((res)=> res.json('success'))
     .catch(err => res.json(err))
 }
