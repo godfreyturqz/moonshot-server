@@ -15,4 +15,4 @@ const nameSchema = new Schema({
     province: { type: String, required: true },
 })
 
-module.exports = mongoose.model('name', nameSchema)
+module.exports = mongoose.model('record', nameSchema)

@@ -4,12 +4,15 @@ const fileupload = require('express-fileupload')
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
 const express = require('express')
+const credentials = require('../middlewares/credentials')
+const corsOptions = require('../middlewares/corsOptions')
 
 module.exports = [
     rateLimiter({max: 100, windowMs: 1 * 60 * 1000}),
     compression(),
     fileupload({useTempFiles : true}),
-    cors(),
+    credentials,
+    cors(corsOptions),
     cookieParser(),
     express.json({limit: "10mb", extended: true}),
     express.urlencoded({limit: "10mb", extended: true})

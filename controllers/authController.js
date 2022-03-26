@@ -5,31 +5,30 @@ const UserModel = require('../models/userModel')
 // UTILS
 const jwt = require('../utils/jwt')
 const signupErrorHandler = require('../utils/signupErrorHandler')
-
-
-const JWT_COOKIE_NAME = 'JWT'
+// CONSTANTS
+const JWT_COOKIE_NAME = 'refreshToken'
 
 //------------------------------------
 // SIGNUP
 //------------------------------------
 module.exports.signupUser = async (req,res) => {
-
-    const { email, password } = req.body
-
     try {
-        const userData = await UserModel.create({ email, password })
-        const accessToken = jwt.generateAccessToken(userData._id)
-        const refreshToken = jwt.generateRefreshToken(userData._id)
+        const { email, password } = req.body
+        // encrypt the password
+        const hashedPassword = await bcrypt.hash(password, 10)
 
-        // Saving refreshToken with current user
+        const userData = await UserModel.create({ email, password: hashedPassword })
+        const accessToken = jwt.generateAccessToken(userData?._id)
+        const refreshToken = jwt.generateRefreshToken(userData?._id)
+
+        // Saving refreshToken
         userData.refreshToken = refreshToken
-        const result = await userData.save()
-        console.log(result)
+        await userData.save()
 
         res.cookie(JWT_COOKIE_NAME, refreshToken, { 
-            httpOnly:true, 
+            httpOnly: true, 
             maxAge: 1 * 24 * 60 * 60 * 1000,
-            sameSite: 'None',
+            // sameSite: 'None',
             // secure: true // only add when in production
         })
 
@@ -45,35 +44,38 @@ module.exports.signupUser = async (req,res) => {
 // SIGNIN
 //------------------------------------
 module.exports.signinUser = async (req,res) => {
-
-    const { email, password } = req.body
-    
-    if(!email || !password) return res.status(400).json({ message: 'email and password are required.' })
-
     try {
+        // check required field
+        const { email, password } = req.body
+        if(!email || !password) return res.status(400).json({ message: 'email and password are required.' })
+
+        // check existing
         const userData = await UserModel.findOne({ email })
         if(!userData) return res.status(404).json({ message: 'account does not exists' })
 
-        const isMatch = await bcrypt.compare(password, userData.password)
-        if(!isMatch) return res.status(401).json({message: 'authentication error'})
-    
-        const accessToken = jwt.generateAccessToken(userData._id)
-        const refreshToken = jwt.generateRefreshToken(userData._id)
+        // compare password
+        const isMatch = await bcrypt.compare(password, userData?.password)
+        if (!isMatch) return res.status(401).json({ message: 'authentication error' })
 
-        // Saving refreshToken with current user
+        // create JWTs
+        const accessToken = jwt.generateAccessToken(userData?._id)
+        const refreshToken = jwt.generateRefreshToken(userData?._id)
+
+        // Saving refreshToken
         userData.refreshToken = refreshToken
-        userData.save()
+        await userData.save()
 
         res.cookie(JWT_COOKIE_NAME, refreshToken, { 
             httpOnly: true,
             maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
-            sameSite: 'None',
+            // sameSite: 'None',
             // secure: true // only add when in production
         })
-        res.status(200).json({accessToken}) 
+
+        res.status(200).json({accessToken})
 
     } catch (error) {
-        res.status(400).json({message: 'login failed', error})
+        res.status(401).json({message: 'signin failed', error})
     }
 }
 
@@ -81,12 +83,36 @@ module.exports.signinUser = async (req,res) => {
 // SIGNOUT
 //------------------------------------
 module.exports.signoutUser = (req, res) => {
-    res.cookie(JWT_COOKIE_NAME, '', { httpOnly:true, maxAge: 1}).send()
+    res.cookie(JWT_COOKIE_NAME, '', { httpOnly:true, maxAge: 1 }).send()
 }
 
 //------------------------------------
-// FOR DEV PURPOSES
+// REFRESH TOKEN
 //------------------------------------
+module.exports.refreshToken = async (req, res) => {
+    try {
+        const cookies = req.cookies
+        if (!cookies[JWT_COOKIE_NAME]) return res.status(401).json({message: 'no token'})
+
+        const refreshToken = cookies[JWT_COOKIE_NAME]
+        const userData = await UserModel.findOne({ refreshToken })
+        if (!userData) return res.status(403).json({ message: 'refresh token does not exists' })
+        
+        // verify jwt 
+        const decoded = jwt.verify(refreshToken)
+        if (decoded._id !== userData._id.toString()) return res.status(403).json({ message: 'not verified' })
+
+        const accessToken = jwt.generateAccessToken(userData._id)
+        res.status(200).json({accessToken})
+
+    } catch (error) {
+        res.status(403).json({ message: 'token invalid or expired' })
+    }
+}
+
+//X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X
+// FOR DEV PURPOSES
+//X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X
 
 // GET ALL USERS
 module.exports.getAllUsers = async (req,res) => {

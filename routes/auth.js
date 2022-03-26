@@ -11,6 +11,9 @@ router.route('/signin')
 router.route('/signout')
     .get(authController.signoutUser)
 
+router.route('/refresh')
+    .get(authController.refreshToken)
+
 // for dev purposes
 router.route('/authDev')
     .get(authController.getAllUsers)

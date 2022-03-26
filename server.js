@@ -15,12 +15,7 @@ app.use(...middlewares)
 //--------------------------------------------------------------
 const PORT = process.env.PORT || 5000
 
-mongoose.connect(process.env.DB_CONNECTION_LOCAL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    // useFindAndModify: false,
-    // useCreateIndex: true
-})
+mongoose.connect(process.env.DB_CONNECTION_LOCAL)
 .then(app.listen(PORT, () => console.log(`Server running on port ${PORT}`)))
 .catch(error => console.log(error.message))
 

@@ -26,10 +26,13 @@ const userSchema = new mongoose.Schema({
 
 // runs a function before save
 // adds salt before saving the password in the database
-userSchema.pre('save', async function (next) {
-    const salt = await bcrypt.genSalt()
-    this.password = await bcrypt.hash(this.password, salt)
-    next()
-})
+// userSchema.pre('save', function (next) {
+//     const saltRounds = 10
+//     bcrypt.hash(this.password, saltRounds, function(err, hash){
+//         if (err) return next(err)
+//         this.password = hash
+//     })
+//     next()
+// })
 
 module.exports = mongoose.model('user', userSchema)
