@@ -7,7 +7,7 @@ module.exports.generateAccessToken = (payload) => {
     return jwt.sign(
         { payload }, 
         process.env.ACCESS_TOKEN_SECRET, 
-        { expiresIn: '30s' } // 30 seconds
+        { expiresIn: '300s' } // 15 mins
         // { expiresIn: '5s' }
     )
 }

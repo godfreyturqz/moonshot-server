@@ -28,8 +28,8 @@ module.exports.signupUser = async (req,res) => {
         res.cookie(JWT_COOKIE_NAME, refreshToken, { 
             httpOnly: true, 
             maxAge: 1 * 24 * 60 * 60 * 1000,
-            // sameSite: 'None',
-            // secure: true // only add when in production
+            sameSite: 'None',
+            secure: true
         })
 
         res.status(201).json({ accessToken })
@@ -68,22 +68,15 @@ module.exports.signinUser = async (req,res) => {
         res.cookie(JWT_COOKIE_NAME, refreshToken, { 
             httpOnly: true,
             maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
-            // sameSite: 'None',
-            // secure: true // only add when in production
+            sameSite: 'None',
+            secure: true
         })
 
-        res.status(200).json({accessToken})
+        res.status(200).json({ accessToken })
 
     } catch (error) {
         res.status(401).json({message: 'signin failed', error})
     }
-}
-
-//------------------------------------
-// SIGNOUT
-//------------------------------------
-module.exports.signoutUser = (req, res) => {
-    res.cookie(JWT_COOKIE_NAME, '', { httpOnly:true, maxAge: 1 }).send()
 }
 
 //------------------------------------
@@ -92,7 +85,8 @@ module.exports.signoutUser = (req, res) => {
 module.exports.refreshToken = async (req, res) => {
     try {
         const cookies = req.cookies
-        if (!cookies[JWT_COOKIE_NAME]) return res.status(401).json({message: 'no token'})
+        if (!cookies[JWT_COOKIE_NAME]) return res.status(401).json({message: 'no refresh token'})
+        console.log(cookies)
 
         const refreshToken = cookies[JWT_COOKIE_NAME]
         const userData = await UserModel.findOne({ refreshToken })
@@ -106,9 +100,17 @@ module.exports.refreshToken = async (req, res) => {
         res.status(200).json({accessToken})
 
     } catch (error) {
-        res.status(403).json({ message: 'token invalid or expired' })
+        res.status(403).json({ message: 'refresh token invalid or expired' })
     }
 }
+
+//------------------------------------
+// SIGNOUT
+//------------------------------------
+module.exports.signoutUser = (req, res) => {
+    res.cookie(JWT_COOKIE_NAME, '', { httpOnly:true, maxAge: 1 }).send()
+}
+
 
 //X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X
 // FOR DEV PURPOSES
