@@ -3,7 +3,11 @@ const bcrypt = require('bcrypt')
 // MODEL
 const UserModel = require('../models/userModel')
 // UTILS
-const jwt = require('../utils/jwt')
+const {
+	generateAccessToken,
+	generateRefreshToken,
+	verifyRefreshToken,
+} = require('../utils/jwt')
 const signupErrorHandler = require('../utils/signupErrorHandler')
 // CONSTANTS
 const JWT_COOKIE_NAME = 'refreshToken'
@@ -16,7 +20,7 @@ const cookieConfig = {
 	httpOnly: true,
 	maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
 	sameSite: 'None',
-	secure: true, // will not work with Postman if set to false
+	// secure: true, // will not work with Postman if set to false
 }
 
 //------------------------------------
@@ -29,10 +33,12 @@ module.exports.signupUser = async (req, res) => {
 		const hashedPassword = await bcrypt.hash(password, 10)
 
 		const userData = await UserModel.create({ email, password: hashedPassword })
-		const accessToken = jwt.generateAccessToken(userData?._id)
-		const refreshToken = jwt.generateRefreshToken(userData?._id)
 
-		// Saving refreshToken
+		// generate access token and refresh token
+		const accessToken = generateAccessToken({ _id: userData?._id })
+		const refreshToken = generateRefreshToken({ _id: userData?._id })
+
+		// save refreshToken to database
 		userData.refreshToken = refreshToken
 		await userData.save()
 
@@ -67,11 +73,11 @@ module.exports.signinUser = async (req, res) => {
 		if (!isMatch)
 			return res.status(401).json({ message: 'authentication error' })
 
-		// create JWTs
-		const accessToken = jwt.generateAccessToken(userData?._id)
-		const refreshToken = jwt.generateRefreshToken(userData?._id)
+		// generate access token and refresh token
+		const accessToken = generateAccessToken({ _id: userData?._id })
+		const refreshToken = generateRefreshToken({ _id: userData?._id })
 
-		// Saving refreshToken
+		// save refreshToken to database
 		userData.refreshToken = refreshToken
 		await userData.save()
 
@@ -98,11 +104,11 @@ module.exports.refreshToken = async (req, res) => {
 			return res.status(403).json({ message: 'refresh token does not exists' })
 
 		// verify jwt
-		const decoded = jwt.verify(refreshToken)
+		const decoded = verifyRefreshToken(refreshToken)
 		if (decoded._id !== userData._id.toString())
 			return res.status(403).json({ message: 'not verified' })
 
-		const accessToken = jwt.generateAccessToken(userData._id)
+		const accessToken = jwt.generateAccessToken({ _id: userData?._id })
 		res.status(200).json({ accessToken })
 	} catch (error) {
 		res.status(403).json({ message: 'refresh token invalid or expired' })
