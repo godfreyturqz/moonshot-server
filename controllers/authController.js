@@ -20,7 +20,7 @@ const cookieConfig = {
 	httpOnly: true,
 	maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
 	sameSite: 'None',
-	// secure: true, // will not work with Postman if set to false
+	secure: true, // will not work with Postman if set to false
 }
 
 //------------------------------------
@@ -108,8 +108,16 @@ module.exports.refreshToken = async (req, res) => {
 		if (decoded._id !== userData._id.toString())
 			return res.status(403).json({ message: 'not verified' })
 
-		const accessToken = jwt.generateAccessToken({ _id: userData?._id })
-		res.status(200).json({ accessToken })
+		// generate new tokens
+		const newRefreshToken = generateRefreshToken({ _id: userData?._id })
+		const newAccessToken = generateAccessToken({ _id: userData?._id })
+
+		// save refreshToken to database
+		userData.refreshToken = newRefreshToken
+		await userData.save()
+
+		res.cookie(JWT_COOKIE_NAME, newRefreshToken, cookieConfig)
+		res.status(200).json({ accessToken: newAccessToken })
 	} catch (error) {
 		res.status(403).json({ message: 'refresh token invalid or expired' })
 	}
