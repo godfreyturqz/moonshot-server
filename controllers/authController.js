@@ -18,15 +18,18 @@ const JWT_COOKIE_NAME = 'refreshToken'
 
 const cookieConfig = {
 	httpOnly: true,
-	maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
 	sameSite: 'None',
 	secure: true, // will not work with Postman if set to false
+}
+
+const cookieExpiration = {
+	maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
 }
 
 //------------------------------------
 // SIGNUP
 //------------------------------------
-module.exports.signupUser = async (req, res) => {
+module.exports.signUp = async (req, res) => {
 	try {
 		const { email, password } = req.body
 		// encrypt the password
@@ -42,7 +45,10 @@ module.exports.signupUser = async (req, res) => {
 		userData.refreshToken = refreshToken
 		await userData.save()
 
-		res.cookie(JWT_COOKIE_NAME, refreshToken, cookieConfig)
+		res.cookie(JWT_COOKIE_NAME, refreshToken, {
+			...cookieConfig,
+			...cookieExpiration,
+		})
 
 		res.status(201).json({ accessToken })
 	} catch (error) {
@@ -54,7 +60,7 @@ module.exports.signupUser = async (req, res) => {
 //------------------------------------
 // SIGNIN
 //------------------------------------
-module.exports.signinUser = async (req, res) => {
+module.exports.signIn = async (req, res) => {
 	try {
 		// check required field
 		const { email, password } = req.body
@@ -81,7 +87,10 @@ module.exports.signinUser = async (req, res) => {
 		userData.refreshToken = refreshToken
 		await userData.save()
 
-		res.cookie(JWT_COOKIE_NAME, refreshToken, cookieConfig)
+		res.cookie(JWT_COOKIE_NAME, refreshToken, {
+			...cookieConfig,
+			...cookieExpiration,
+		})
 
 		res.status(200).json({ accessToken })
 	} catch (error) {
@@ -116,7 +125,11 @@ module.exports.refreshToken = async (req, res) => {
 		userData.refreshToken = newRefreshToken
 		await userData.save()
 
-		res.cookie(JWT_COOKIE_NAME, newRefreshToken, cookieConfig)
+		res.cookie(JWT_COOKIE_NAME, newRefreshToken, {
+			...cookieConfig,
+			...cookieExpiration,
+		})
+
 		res.status(200).json({ accessToken: newAccessToken })
 	} catch (error) {
 		res.status(403).json({ message: 'refresh token invalid or expired' })
@@ -126,8 +139,22 @@ module.exports.refreshToken = async (req, res) => {
 //------------------------------------
 // SIGNOUT
 //------------------------------------
-module.exports.signoutUser = (req, res) => {
-	res.cookie(JWT_COOKIE_NAME, '', { httpOnly: true, maxAge: 1 }).send()
+module.exports.signOut = async (req, res) => {
+	try {
+		const refreshToken = req.cookies[JWT_COOKIE_NAME]
+		if (!refreshToken)
+			return res.status(200).json({ message: 'no refresh token' })
+
+		// Delete refreshToken in db
+		const userData = await UserModel.findOne({ refreshToken })
+		userData.refreshToken = ''
+		await userData.save()
+
+		res.clearCookie(JWT_COOKIE_NAME, cookieConfig)
+		res.status(200).json({ message: 'signout success' })
+	} catch (error) {
+		res.status(403).json({ message: 'signout error' })
+	}
 }
 
 //X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X-X
