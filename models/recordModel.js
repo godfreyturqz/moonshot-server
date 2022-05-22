@@ -13,6 +13,7 @@ const recordSchema = new Schema({
 	barangay: { type: String, required: true },
 	city: { type: String, required: true },
 	province: { type: String, required: true },
+	createdAt: { type: Date, default: new Date() },
 })
 
 module.exports = mongoose.model('record', recordSchema)

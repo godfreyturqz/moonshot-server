@@ -19,7 +19,7 @@ const JWT_COOKIE_NAME = 'refreshToken'
 const cookieConfig = {
 	httpOnly: true,
 	sameSite: 'None',
-	secure: true, // will not work with Postman if set to false
+	// secure: true, // will not work with Postman if set to false
 }
 
 const cookieExpiration = {
