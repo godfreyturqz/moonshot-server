@@ -35,6 +35,7 @@ const get = async (req, res) => {
 				barangay: 1,
 				city: 1,
 				province: 1,
+				createdAt: 1,
 			})
 			.lean()
 			.skip(res.startIndex)
