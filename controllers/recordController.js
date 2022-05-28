@@ -38,6 +38,7 @@ const get = async (req, res) => {
 				createdAt: 1,
 			})
 			.lean()
+			.sort({ createdAt: -1 })
 			.skip(res.startIndex)
 			.limit(res.limit)
 
