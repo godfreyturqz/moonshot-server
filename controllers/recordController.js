@@ -10,7 +10,7 @@ const asyncFunction = async (res, callback) => {
 		console.log('record API')
 		res.status(200).json(data)
 	} catch (error) {
-		console.log('error in record API')
+		console.log('error_log@recordController.js')
 		console.log(error)
 		res.status(400).json(error)
 	}
