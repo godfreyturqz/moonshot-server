@@ -21,6 +21,12 @@ const get = async (req, res) => {
 		if (!cache.isExpired(CACHE_KEY))
 			return res.status(200).json(cache.get(CACHE_KEY).data)
 
+		const page = req.query.page
+		const limit = req.query.limit
+
+		const startIndex = (page - 1) * limit
+		const endIndex = page * limit
+
 		const data = await recordModel
 			.find()
 			.select({
@@ -39,8 +45,8 @@ const get = async (req, res) => {
 			})
 			.lean()
 			.sort({ createdAt: -1 })
-			.skip(res.startIndex)
-			.limit(res.limit)
+			.skip(startIndex)
+			.limit(limit)
 
 		res.status(200).json(data)
 		cache.set(CACHE_KEY, data)
