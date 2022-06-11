@@ -18,8 +18,8 @@ const asyncFunction = async (res, callback) => {
 
 const get = async (req, res) => {
 	try {
-		if (!cache.isExpired(CACHE_KEY))
-			return res.status(200).json(cache.get(CACHE_KEY).data)
+		// if (!cache.isExpired(CACHE_KEY))
+		// return res.status(200).json(cache.get(CACHE_KEY).data)
 
 		const page = req.query.page
 		const limit = req.query.limit
