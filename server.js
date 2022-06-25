@@ -27,3 +27,4 @@ mongoose
 app.use('/api/v1', require('./routes/auth'))
 app.use(verifyJWT)
 app.use('/api/v1', require('./routes/record'))
+app.use('/api/v1', require('./routes/pdf'))

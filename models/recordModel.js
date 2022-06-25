@@ -14,6 +14,7 @@ const recordSchema = new Schema({
 	city: { type: String, required: true },
 	province: { type: String, required: true },
 	createdAt: { type: Date, default: Date.now },
+	pdfDoc: { type: Schema.Types.ObjectId, ref: 'pdf' }, //ref is model name
 })
 
 module.exports = mongoose.model('record', recordSchema)
